@@ -9,6 +9,8 @@ const client = AgoraRTC.createClient({
 let localTracks = []
 let remoteUsers = {}
 
+let isHost = false; // Variable to track if the local user is the host
+
 let joinAndDisplayLocalStream = async () => {
     await client.join(APP_ID, CHANNEL, TOKEN, null);
 
@@ -25,6 +27,9 @@ let joinAndDisplayLocalStream = async () => {
     localTracks[1].play(`user-local`);
 
     await client.publish([localTracks[0], localTracks[1]]);
+
+    // Mark the local user as the host
+    isHost = true;
 }
 
 let joinStream = async () => {
@@ -38,6 +43,7 @@ let leaveStream = async () => {
     localTracks.forEach(track => track.close());
     document.getElementById('join-btn').style.display = 'block';
     document.getElementById('stream-controls').style.display = 'none';
+    isHost = false; // Reset the host status when leaving
 }
 
 let handleUserJoined = async (user, mediaType) => {
@@ -46,25 +52,30 @@ let handleUserJoined = async (user, mediaType) => {
     remoteUsers[user.uid] = user;
     await client.subscribe(user, mediaType);
 
-    // if (mediaType === 'video') {
-    //     let player = document.getElementById(`user-container-${user.uid}`);
-    //     if (player != null) {
-    //         player.remove();
-    //     }
+    if (mediaType === 'video') {
+        let player = document.getElementById(`user-container-${user.uid}`);
+        if (player != null) {
+            player.remove();
+        }
 
-    //     player = `<div class="video-container" id="user-container-${user.uid}">
-    //         <div class="video-player" id="user-${user.uid}">
+        player = `<div class="video-container" id="user-container-${user.uid}">
+            <div class="video-player" id="user-${user.uid}">
     
-    //         </div>
-    //     </div>`;
+            </div>
+        </div>`;
 
-    //     document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
-    //     user.videoTrack.play(`user-${user.uid}`);
-    // }
+        document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
 
-    // if (mediaType === 'audio') {
-    //     user.audioTrack.play();
-    // }
+        // Only play video if the local user is the host
+        if (isHost) {
+            user.videoTrack.play(`user-${user.uid}`);
+        }
+    }
+
+    if (mediaType === 'audio') {
+        // Always play audio regardless of host status
+        user.audioTrack.play();
+    }
 }
 
 document.getElementById('join-btn').addEventListener('click', joinStream);
