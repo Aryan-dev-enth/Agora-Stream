@@ -9,7 +9,7 @@ const client = AgoraRTC.createClient({
 let localTracks = []
 let remoteUsers = {}
 
-let isHost = false; // Variable to track if the local user is the host
+let isFirstPerson = false; // Variable to track if the local user is the first person
 
 let joinAndDisplayLocalStream = async () => {
     await client.join(APP_ID, CHANNEL, TOKEN, null);
@@ -28,8 +28,8 @@ let joinAndDisplayLocalStream = async () => {
 
     await client.publish([localTracks[0], localTracks[1]]);
 
-    // Mark the local user as the host
-    isHost = true;
+    // Mark the local user as the first person
+    isFirstPerson = true;
 }
 
 let joinStream = async () => {
@@ -43,7 +43,7 @@ let leaveStream = async () => {
     localTracks.forEach(track => track.close());
     document.getElementById('join-btn').style.display = 'block';
     document.getElementById('stream-controls').style.display = 'none';
-    isHost = false; // Reset the host status when leaving
+    isFirstPerson = false; // Reset the first person status when leaving
 }
 
 let handleUserJoined = async (user, mediaType) => {
@@ -66,14 +66,14 @@ let handleUserJoined = async (user, mediaType) => {
 
         document.getElementById('video-streams').insertAdjacentHTML('beforeend', player);
 
-        // Only play video if the local user is the host
-        if (isHost) {
+        // Only play video if the local user is the first person
+        if (isFirstPerson) {
             user.videoTrack.play(`user-${user.uid}`);
         }
     }
 
     if (mediaType === 'audio') {
-        // Always play audio regardless of host status
+        // Always play audio regardless of first person status
         user.audioTrack.play();
     }
 }
